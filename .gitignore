@@ -1,0 +1,41 @@
+# Python / build
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# User-supplied data, downloaded models, and generated experiments
+data/
+models/
+outputs/
+results/
+frn_results/
+open_frn/
+third_party/
+vendor/
+*.parquet
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.joblib
+*.pkl
+*.zip
+*.tar
+*.tar.gz
+*.log

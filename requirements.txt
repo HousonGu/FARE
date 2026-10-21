@@ -1,0 +1,6 @@
+# Lightweight method and data/protocol checks. Model environments: configs/environments/.
+numpy>=1.26,<3
+pandas>=2.2,<3
+scipy>=1.13,<2
+threadpoolctl>=3.5,<4
+pyarrow>=19,<24

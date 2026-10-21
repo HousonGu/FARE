@@ -1,0 +1,26 @@
+{
+  "version": "rohlik-sales-v2-natural-v1-20261014",
+  "context": 56,
+  "horizon": 7,
+  "dev_weeks": 26,
+  "test_weeks": 26,
+  "top_k": 8,
+  "reference_batch": 8,
+  "cpu_threads": 8,
+  "chronos_model": "amazon/chronos-2",
+  "chronos_revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+  "chronos_package": "2.3.2",
+  "chronos_batch": 128,
+  "future_covariates": [
+    "weekday",
+    "discount",
+    "holiday"
+  ],
+  "factor_condition": "benchmark-provided discount plans and warehouse holiday; discount=max(0,type_0..6)>0; no future availability/orders/price",
+  "seed": 20261005,
+  "reference_group": [
+    "warehouse",
+    "L2_category_name_en"
+  ],
+  "target": "availability-adjusted anonymized sales volume, mixed pcs/kg"
+}

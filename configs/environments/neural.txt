@@ -1,0 +1,7 @@
+# Install a CUDA build of torch>=2.5,<3 compatible with the server driver first.
+# PyTorch is intentionally not reinstalled by this file.
+numpy==2.2.4
+pandas==2.2.3
+scipy==1.15.2
+pyarrow==23.0.1
+threadpoolctl==3.6.0

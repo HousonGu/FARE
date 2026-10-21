@@ -1,0 +1,45 @@
+{
+  "version": "retail-supplement-v4-unified52-2026-10-12",
+  "seed": 20261005,
+  "context": 56,
+  "horizon": 7,
+  "tuning_weeks": 8,
+  "lightgbm_trials": 20,
+  "lightgbm_max_rounds": 2000,
+  "lightgbm_patience": 100,
+  "cpu_threads": 8,
+  "tft_hidden_sizes": [
+    32,
+    64
+  ],
+  "tft_dropouts": [
+    0.1,
+    0.3
+  ],
+  "tft_learning_rates": [
+    0.001,
+    0.0003
+  ],
+  "tft_epochs": 20,
+  "tft_patience": 4,
+  "tft_batch_size": 256,
+  "tft_fit_series_per_origin": null,
+  "tft_seeds": [
+    20261005,
+    20261006,
+    20261007
+  ],
+  "chronos_model": "amazon/chronos-2",
+  "chronos_revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+  "chronos_batch_size": 128,
+  "gate_penalty": 0.002,
+  "gate_maxiter": 250,
+  "gate_ftol": 3e-09,
+  "gate_gtol": 3e-06,
+  "shrink_rows": 14.0,
+  "m5_first_origin": "2011-03-28",
+  "m5_last_origin": "2016-05-16",
+  "m5_development_weeks": 52,
+  "m5_test_weeks": 52,
+  "reference_query_batch": 8
+}

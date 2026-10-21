@@ -1,0 +1,42 @@
+{
+  "patchtst": {
+    "repository": "https://github.com/yuqinie98/PatchTST",
+    "commit": "204c21efe0b39603ad6e2ca640ef5896646ab1a9",
+    "files": {
+      "model.py": {
+        "source": "PatchTST_supervised/models/PatchTST.py",
+        "url": "https://raw.githubusercontent.com/yuqinie98/PatchTST/204c21efe0b39603ad6e2ca640ef5896646ab1a9/PatchTST_supervised/models/PatchTST.py"
+      },
+      "layers/PatchTST_backbone.py": {
+        "source": "PatchTST_supervised/layers/PatchTST_backbone.py",
+        "url": "https://raw.githubusercontent.com/yuqinie98/PatchTST/204c21efe0b39603ad6e2ca640ef5896646ab1a9/PatchTST_supervised/layers/PatchTST_backbone.py"
+      },
+      "layers/PatchTST_layers.py": {
+        "source": "PatchTST_supervised/layers/PatchTST_layers.py",
+        "url": "https://raw.githubusercontent.com/yuqinie98/PatchTST/204c21efe0b39603ad6e2ca640ef5896646ab1a9/PatchTST_supervised/layers/PatchTST_layers.py"
+      },
+      "layers/RevIN.py": {
+        "source": "PatchTST_supervised/layers/RevIN.py",
+        "url": "https://raw.githubusercontent.com/yuqinie98/PatchTST/204c21efe0b39603ad6e2ca640ef5896646ab1a9/PatchTST_supervised/layers/RevIN.py"
+      },
+      "LICENSE": {
+        "source": "LICENSE",
+        "url": "https://raw.githubusercontent.com/yuqinie98/PatchTST/204c21efe0b39603ad6e2ca640ef5896646ab1a9/LICENSE"
+      }
+    }
+  },
+  "sparsetsf": {
+    "repository": "https://github.com/lss-1138/SparseTSF",
+    "commit": "b8c2740eecc84d8095ffce49ba5acafe68e53bb8",
+    "files": {
+      "model.py": {
+        "source": "models/SparseTSF.py",
+        "url": "https://raw.githubusercontent.com/lss-1138/SparseTSF/b8c2740eecc84d8095ffce49ba5acafe68e53bb8/models/SparseTSF.py"
+      },
+      "LICENSE": {
+        "source": "LICENSE",
+        "url": "https://raw.githubusercontent.com/lss-1138/SparseTSF/b8c2740eecc84d8095ffce49ba5acafe68e53bb8/LICENSE"
+      }
+    }
+  }
+}

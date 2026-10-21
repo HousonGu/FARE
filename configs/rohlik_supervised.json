@@ -1,0 +1,43 @@
+{
+  "version": "rohlik-multibackbone-v1-20261015",
+  "seed": 20261005,
+  "context": 56,
+  "horizon": 7,
+  "tuning_weeks": 8,
+  "lightgbm_trials": 20,
+  "lightgbm_max_rounds": 2000,
+  "lightgbm_patience": 100,
+  "cpu_threads": 8,
+  "tft_hidden_sizes": [
+    32,
+    64
+  ],
+  "tft_dropouts": [
+    0.1,
+    0.3
+  ],
+  "tft_learning_rates": [
+    0.001,
+    0.0003
+  ],
+  "tft_epochs": 20,
+  "tft_patience": 4,
+  "tft_batch_size": 256,
+  "tft_fit_series_per_origin": null,
+  "tft_seeds": [
+    20261005,
+    20261006,
+    20261007
+  ],
+  "gate_penalty": 0.002,
+  "gate_maxiter": 250,
+  "gate_ftol": 3e-09,
+  "gate_gtol": 3e-06,
+  "shrink_rows": 14.0,
+  "reference_query_batch": 8,
+  "backbone_seeds": [
+    20261005,
+    20261006,
+    20261007
+  ]
+}
