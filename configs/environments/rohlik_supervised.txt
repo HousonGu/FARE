@@ -1,4 +1,4 @@
-# Install a suitable CUDA PyTorch build on the server first; do not replace it here.
+# Install a suitable CUDA PyTorch build first; this file does not replace it.
 numpy>=1.26,<3
 pandas>=2.2,<3
 scipy>=1.13

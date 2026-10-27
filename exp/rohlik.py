@@ -1,4 +1,4 @@
-"""Resumable Rohlik pipeline. No test scoring in profile mode."""
+"""Rohlik Chronos-2 runner: references, backbone forecasts, gates, and scoring."""
 from pathlib import Path
 import argparse,json,os,sys,time,platform,importlib.metadata
 import numpy as np
@@ -55,7 +55,7 @@ def environment():
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--raw',type=Path,required=True); parser.add_argument('--out',type=Path,required=True)
-    parser.add_argument('--stage',choices=['audit','profile','references','chronos','gates','score','all'],required=True)
+    parser.add_argument('--stage',choices=['audit','references','chronos','gates','score','all'],required=True)
     parser.add_argument('--device',default='cuda'); parser.add_argument('--config',type=Path,default=HERE.parent/'configs/rohlik.json')
     args=parser.parse_args(); data=RohlikData(args.raw); config=json.loads(args.config.read_text(encoding='utf-8-sig'))
     expected=json.loads((HERE.parent/'configs/rohlik.json').read_text(encoding='utf-8-sig'))
@@ -70,22 +70,19 @@ def main():
         if (out/'complete.json').exists():
             for rel,sha in json.loads((out/'complete.json').read_text(encoding='utf-8'))['artifacts'].items():
                 if digest(out/rel)!=sha: raise ValueError('Completed artifact changed: '+rel)
-            if args.stage!='profile': return
+            return
         json_write(manifest,identity); json_write(out/'audit.json',data.audit)
         if args.stage=='audit': return
-        if args.stage=='profile':
-            origins=[data.schedule['dev'][i] for i in [0,12,25]]; base=out/'profile'
-        else: origins=data.schedule['dev']+data.schedule['test']; base=out
-        model=None; timings=[]
-        stages=['references','chronos','gates','score'] if args.stage=='all' else (['references','chronos'] if args.stage=='profile' else [args.stage])
+        origins=data.schedule['dev']+data.schedule['test']
+        model=None
+        stages=['references','chronos','gates','score'] if args.stage=='all' else [args.stage]
         with threadpool_limits(limits=config['cpu_threads']):
             for stage in stages:
                 if stage in ['references','chronos']:
                     for origin in origins:
-                        path=base/stage/(origin+'.parquet'); keys=data.window(origin)[-1]
+                        path=out/stage/(origin+'.parquet'); keys=data.window(origin)[-1]
                         cols=['shape_retrieval','factor_retrieval'] if stage=='references' else ['backbone_forecast']
                         if path.exists() and path.with_suffix('.sha256.json').exists(): verified_week(path,keys,cols); continue
-                        tick=time.perf_counter()
                         if stage=='references': frame=references(data,origin,config['reference_batch'])
                         else:
                             if model is None:
@@ -95,18 +92,10 @@ def main():
                                 if args.device.startswith('cuda'):
                                     # Force a real kernel before loading the model, catching incompatible GPU builds.
                                     (torch.ones(8,device=args.device)*2).sum().item()
-                                    torch.cuda.reset_peak_memory_stats()
                                 model=Chronos2Pipeline.from_pretrained(config['chronos_model'],revision=config['chronos_revision'],device_map=args.device)
                             frame=chronos_week(data,origin,model,config)
                         save_week(path,frame); verified_week(path,keys,cols)
-                        record=dict(stage=stage,origin=origin,seconds=time.perf_counter()-tick,rows=len(frame),bytes=path.stat().st_size)
-                        if stage=='references': record.update(max_bank_size=int(frame.bank_size.max()),fallback_series=int(frame.groupby('series_id').fallback.first().sum()))
-                        try:
-                            import resource
-                            record['process_peak_rss_kib']=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-                        except ImportError: pass
-                        if stage=='chronos' and args.device.startswith('cuda'): record['cuda_peak_bytes']=torch.cuda.max_memory_allocated()
-                        timings.append(record); json_write(base/f'timing_{stage}_{origin}.json',record); print(record,flush=True)
+                        print(stage,origin,len(frame),flush=True)
                 elif stage=='gates':
                     inputs=gate_inputs(out,origins)
                     marker=out/'gates.complete.json'
@@ -141,11 +130,8 @@ def main():
                     result=dict(status='complete',test_weeks=26,coverage=coverage,overall={m:metric(scored,m) for m in METHODS},weekly={o:{m:metric(p[p.actual.notna()],m) for m in METHODS} for o,p in frame.groupby('origin')})
                     if set(frame.origin)!=set(data.schedule['test']): raise ValueError('Incomplete test origins')
                     parquet_write(out/'scored_predictions.parquet',scored); json_write(out/'metrics.json',result)
-                    artifacts={str(p.relative_to(out)):digest(p) for p in out.rglob('*') if p.is_file() and 'profile' not in p.parts and p.name not in ['RUNNING.lock','complete.json','status.json','budget_status.json','server.log','BUDGET.lock']}
+                    artifacts={str(p.relative_to(out)):digest(p) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json']}
                     json_write(out/'complete.json',dict(status='complete',artifacts=artifacts))
-        if args.stage=='profile':
-            records=[json.loads(p.read_text()) for p in base.glob('timing_*.json')]
-            json_write(base/'summary.json',dict(status='development_profile_only',records=records,admission='Extrapolate each stage conservatively to 52 origins; account for larger final banks, add 50% margin and reserve 30/60 minutes. No test scoring.'))
         json_write(out/'status.json',dict(status='complete' if (out/'complete.json').exists() else 'incomplete',last_stage=args.stage,elapsed_seconds=time.perf_counter()-started))
     finally: (out/'RUNNING.lock').unlink(missing_ok=True)
 

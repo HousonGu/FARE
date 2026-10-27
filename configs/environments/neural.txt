@@ -1,4 +1,4 @@
-# Install a CUDA build of torch>=2.5,<3 compatible with the server driver first.
+# Install a CUDA build of torch>=2.5,<3 compatible with the local driver first.
 # PyTorch is intentionally not reinstalled by this file.
 numpy==2.2.4
 pandas==2.2.3

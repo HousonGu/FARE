@@ -1,4 +1,4 @@
-"""Server model stages: pinned Chronos-2 and validation-tuned LightGBM."""
+"""Backbone stages: pinned Chronos-2 and validation-tuned LightGBM."""
 
 import gc
 

@@ -1,4 +1,4 @@
-"""Standalone PatchTST/SparseTSF retail with/without experiment runner."""
+"""PatchTST/SparseTSF runner: backbone training and FARE fusion on prepared panels."""
 import os
 os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
 from pathlib import Path
@@ -14,7 +14,6 @@ from data_provider.panel import Panel
 from exp.io import HERE, sha, write_json, source_hashes, verify
 from backbones.neural import configure, run_backbone
 from exp.neural_fusion import run_fusion
-from exp.neural_summary import summarize
 
 
 def environment(device):
@@ -36,7 +35,7 @@ def arguments():
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--dataset', choices=['all', 'favorita', 'm5', 'rossmann', 'rohlik'], default='all')
     parser.add_argument('--model', choices=['all', 'patchtst', 'sparsetsf'], default='all')
-    parser.add_argument('--stage', choices=['audit', 'smoke', 'train', 'fusion', 'all', 'summarize'], default='all')
+    parser.add_argument('--stage', choices=['audit', 'train', 'fusion', 'all'], default='all')
     return parser.parse_args()
 
 
@@ -45,14 +44,6 @@ def main():
     config = json.loads((HERE.parent/'configs/neural.json').read_text(encoding='utf-8'))
     configure(config, args.device)
     args.out.mkdir(parents=True, exist_ok=True)
-    if args.stage == 'summarize':
-        if not summarize(args.out, config, args.dataset, args.model):
-            raise SystemExit(2)
-        return
-    if args.stage == 'smoke':
-        from exp.neural_smoke import smoke
-        smoke(args.data_root, args.out, args.device, config, args.dataset)
-        return
     datasets = config['datasets'] if args.dataset == 'all' else [args.dataset]
     kinds = config['backbones'] if args.model == 'all' else [args.model]
     for dataset in datasets:
@@ -87,8 +78,6 @@ def main():
         finally:
             lock.unlink(missing_ok=True)
         print('finished requested stage', dataset, args.stage, flush=True)
-    if args.stage in ['all', 'fusion']:
-        summarize(args.out, config, args.dataset, args.model)
 
 
 if __name__ == '__main__':

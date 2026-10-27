@@ -1,4 +1,4 @@
-"""Server model stages: pinned Chronos-2 and validation-tuned LightGBM."""
+"""Backbone stages: pinned Chronos-2 and validation-tuned LightGBM."""
 import gc
 import importlib.metadata
 import itertools
@@ -16,12 +16,12 @@ def chronos(data, schedule, folder, device, model_path=None):
     if model_path is None:
         kwargs["revision"] = CONFIG["chronos_revision"]
     else:
-        # Existing server model may be reused only after matching the frozen weights.
+        # A local checkpoint is accepted only if it matches the pinned weights.
         from backbones.chronos_protocol import EXPECTED_MODEL
         from pathlib import Path
         for name, sha in EXPECTED_MODEL.items():
             if digest(Path(model_path)/name) != sha:
-                raise ValueError(f"Local model does not match V1: {name}")
+                raise ValueError(f"Local model does not match the pinned checkpoint: {name}")
     model = None
     reused = {}
     for origin in schedule["dev"] + schedule["test"]:

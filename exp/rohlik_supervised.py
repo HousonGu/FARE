@@ -102,22 +102,9 @@ def fuse_and_score(data,out,backbone='all'):
             if not np.isfinite(scored.actual).all(): raise ValueError('Test targets missing; do not silently change the scored set')
             result=dict(backbone=kind,seed=seed,status='complete',overall={m:metric(scored,m) for m in METHODS},
                         weekly={o:{m:metric(f,m) for m in METHODS} for o,f in scored.groupby('origin')})
-            delta={o:r['soft_history']['wape']-r['backbone']['wape'] for o,r in result['weekly'].items()}
-            result['full_vs_own_backbone']=dict(wins=sum(v<0 for v in delta.values()),ties=sum(v==0 for v in delta.values()),
-                losses=sum(v>0 for v in delta.values()),non_improved_origins=[o for o,v in delta.items() if v>=0],weekly_wape_delta=delta)
             save_week(dest/'scored_predictions.parquet',scored); json_write(dest/'metrics.json',result)
             json_write(marker,dict(inputs=inputs,outputs={p.name:digest(p) for p in dest.iterdir() if p.is_file() and p.name!='complete.json'}))
-    summary=[]
-    for kind in (['lightgbm','tft'] if backbone == 'all' else [backbone]):
-        results=[json.loads((out/'comparisons'/kind/str(s)/'metrics.json').read_text()) for s in CONFIG['backbone_seeds']]
-        for m in METHODS:
-            v=np.array([r['overall'][m]['wape'] for r in results]); mae=np.array([r['overall'][m]['mae'] for r in results])
-            summary.append(dict(backbone=kind,method=m,seeds=len(v),rows=283185,wape_mean=float(v.mean()),wape_std=float(v.std(ddof=1)),mae_mean=float(mae.mean()),mae_std=float(mae.std(ddof=1))))
-    json_write(out/'summary.json',summary)
-    lines=['# Rohlik 多骨干正式结果','', '三种子均值和样本标准差；WAPE 为比例。','', '| 骨干 | 方法 | WAPE mean | WAPE std | MAE mean |','|---|---|---:|---:|---:|']
-    lines += [f"| {r['backbone']} | {r['method']} | {r['wape_mean']:.6f} | {r['wape_std']:.6f} | {r['mae_mean']:.6f} |" for r in summary]
-    (out/'summary.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
-    json_write(out/'complete.json',dict(status='complete',artifacts={str(p.relative_to(out)):digest(p) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json','server.log','budget_status.json','BUDGET.lock'] and 'smoke' not in p.parts}))
+    json_write(out/'complete.json',dict(status='complete',artifacts={str(p.relative_to(out)):digest(p) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json']}))
 
 
 def main():
@@ -125,7 +112,7 @@ def main():
     p.add_argument('--raw',type=Path,required=True); p.add_argument('--out',type=Path,required=True)
     p.add_argument('--device',default='cuda'); p.add_argument('--reference-source',type=Path)
     p.add_argument('--backbone',choices=['all','lightgbm','tft'],default='all')
-    p.add_argument('--stage',choices=['audit','smoke','references','lightgbm','tft','score','all'],default='all')
+    p.add_argument('--stage',choices=['audit','references','lightgbm','tft','score','all'],default='all')
     a=p.parse_args(); a.out.mkdir(parents=True,exist_ok=True)
     data=Data(a.raw); stamp=identity(data,a.device); stamp['backbone']=a.backbone; manifest=a.out/'manifest.json'
     if manifest.exists() and json.loads(manifest.read_text())!=stamp: raise ValueError('Data/code/config/environment changed: use a new output directory')
@@ -145,9 +132,6 @@ def main():
                 if stage=='references': reference_stage(data,a.out,a.reference_source)
                 elif stage in ['lightgbm','tft']: fit_backbone(data,a.out,stage,a.device)
                 elif stage=='score': fuse_and_score(data,a.out,a.backbone)
-                elif stage=='smoke':
-                    from exp.rohlik_smoke import smoke
-                    smoke(data,a.out/'smoke',a.device)
         json_write(a.out/'status.json',dict(stage=a.stage,status='complete' if (a.out/'complete.json').exists() else 'stage_complete_full_pending'))
     finally: lock.unlink(missing_ok=True)
 

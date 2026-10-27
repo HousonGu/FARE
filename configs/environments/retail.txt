@@ -1,4 +1,4 @@
-# Python 3.12; install the CUDA build of torch separately (see handoff).
+# Python 3.12; install a CUDA build of torch separately first.
 numpy==2.2.6
 pandas==2.2.3
 scipy==1.15.3

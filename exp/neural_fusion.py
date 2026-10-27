@@ -1,7 +1,7 @@
-"""The existing daily two-level gate, with per-backbone forward errors and bounded RAM.
+"""Two-level FARE gate for PatchTST/SparseTSF backbones with bounded memory.
 
-Feature definitions and objective match the completed retail implementation. This
-driver streams weeks and blocks the objective to avoid concatenating M5 DataFrames.
+Feature definitions and objective match the retail implementation. This driver
+streams weeks and blocks the objective to avoid concatenating M5 DataFrames.
 """
 from pathlib import Path
 import json
@@ -275,15 +275,10 @@ def run_fusion(panel, backbone, destination, kind, seed, config):
     overall = {variant: pool([v[variant] for v in weekly.values()]) for variant in config['variants']}
     if (len(weekly), overall['without']['rows']) != getattr(panel, 'expected', EXPECTED[panel.dataset]):
         raise ValueError('Formal evaluation range changed')
-    delta = {o: v['with']['wape']-v['without']['wape'] for o, v in weekly.items()}
     result = dict(status='complete', dataset=panel.dataset, backbone=kind, seed=seed,
-        overall=overall, weekly=weekly, paired=dict(relative_wape_reduction=1-overall['with']['wape']/overall['without']['wape'],
-        wape_delta=overall['with']['wape']-overall['without']['wape'], weekly_wape_delta=delta,
-        wins=sum(v < 0 for v in delta.values()), ties=sum(v == 0 for v in delta.values()), losses=sum(v > 0 for v in delta.values())))
+                  overall=overall, weekly=weekly)
     write_json(destination/'metrics.json', result)
-    rows = [dict(origin=o, variant=v, **m) for o, values in weekly.items() for v, m in values.items()]
-    pd.DataFrame(rows).to_csv(destination/'weekly_metrics.csv', index=False)
-    files = [fits_path, destination/'metrics.json', destination/'weekly_metrics.csv']
+    files = [fits_path, destination/'metrics.json']
     files += list((destination/'predictions').glob('*.parquet'))
     seal(destination, files, dict(status='complete', dataset=panel.dataset, backbone=kind, seed=seed))
     return result

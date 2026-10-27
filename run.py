@@ -56,8 +56,8 @@ def build_plan(args):
     if args.dataset not in COVERAGE:
         raise ValueError("--dataset is required unless --list is used")
     if args.backbone not in COVERAGE[args.dataset]:
-        raise ValueError("The retained local sources do not include the Rossmann LightGBM/TFT training adapter. "
-                         "Choose an available backbone; see README.md.")
+        raise ValueError("This release does not include a Rossmann LightGBM/TFT adapter. "
+                         "Choose an available backbone; see docs/REPRODUCE.md.")
     raw_root = args.raw_root.expanduser().resolve()
     if args.raw is not None and (args.dataset in ("favorita", "m5") or args.backbone in ("patchtst", "sparsetsf")):
         raise ValueError("--raw is for the Rossmann/Rohlik raw-data runners. Use --raw-root for Favorita/M5 "
@@ -70,9 +70,9 @@ def build_plan(args):
     if args.backbone in ("patchtst", "sparsetsf"):
         if args.stage == "references":
             raise ValueError("Build references with --backbone chronos --stage references, then export a panel "
-                             "with python -m exp.prepare_panel. See README.md.")
+                             "with python -m exp.prepare_panel. See docs/REPRODUCE.md.")
         module = "exp.neural"
-        stage = {"backbone": "train", "score": "summarize"}.get(args.stage, args.stage)
+        stage = {"backbone": "train", "score": "fusion"}.get(args.stage, args.stage)
         native = ["--dataset", args.dataset, "--model", args.backbone,
                   "--data-root", str(args.data_root.expanduser().resolve()), "--stage", stage]
         notes.append("Requires a prepared, sealed panel and separately fetched upstream model source.")
@@ -90,7 +90,7 @@ def build_plan(args):
         module = "exp.rohlik_supervised"
         stage = {"backbone": args.backbone, "fusion": "score"}.get(args.stage, args.stage)
         native = ["--raw", str(raw_directory), "--backbone", args.backbone, "--stage", stage]
-        notes.append("This retained driver fits the development gates and scores test outputs together in its score stage.")
+        notes.append("This runner fits the development gates and scores test outputs together in its score stage.")
     return Plan(module, [sys.executable, "-m", module, *native, *common], environment, tuple(notes))
 
 
@@ -99,7 +99,7 @@ def main(argv=None):
     args = command_parser.parse_args(argv)
     if args.list:
         print(json.dumps({"datasets": COVERAGE, "stages": list(STAGES),
-                          "missing": "Rossmann LightGBM/TFT training adapter not present in local sources"}, indent=2))
+                          "not_included": "Rossmann LightGBM/TFT"}, indent=2))
         return 0
     try:
         plan = build_plan(args)

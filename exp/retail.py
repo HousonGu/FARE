@@ -1,4 +1,4 @@
-"""Run the supplementary experiments on a server; no manuscript edits."""
+"""Favorita/M5 experiment runner: references, backbones, gates, and scoring."""
 from __future__ import annotations
 import argparse
 import importlib.metadata
@@ -43,7 +43,6 @@ def audit(data, schedule, folder):
             raise ValueError("Raw data changed; choose a new run directory")
         if old["packages"] != versions or old["python"] != platform.python_version():
             raise ValueError("Runtime packages changed; restore environment or choose a new run directory")
-        # Imported V3 audit lacks the final four origins; extend counts below.
     counts = {}
     for split in ("fit", "dev", "test"):
         for origin in schedule[split]:
@@ -65,7 +64,7 @@ def main():
     p.add_argument("--backbone", choices=["all", "chronos", "lightgbm", "tft"], default="all")
     p.add_argument("--run", choices=["all"]+list(schedules()), default="m5_full")
     p.add_argument("--stage", choices=["all", "audit"]+STAGES, default="all")
-    p.add_argument("--out", type=Path, default=RESULT_ROOT/"supplementary")
+    p.add_argument("--out", type=Path, default=RESULT_ROOT)
     p.add_argument("--device", default="cuda")
     p.add_argument("--chronos-model", type=Path)
     p.add_argument("--list", action="store_true")
@@ -74,7 +73,7 @@ def main():
         print(json.dumps(schedules(), ensure_ascii=False, indent=2)); return
     args.out.mkdir(parents=True, exist_ok=True)
     lock = args.out/"RUNNING.lock"
-    # Exclusive lock prevents two tmux invocations from corrupting shared state.
+    # Exclusive lock prevents two concurrent runs from corrupting shared state.
     try:
         fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
@@ -134,7 +133,7 @@ def main():
                     artifact_roots = [folder/("gates_"+b) for b in families(args.backbone)]
                 else:
                     score(data, schedule, folder, args.backbone)
-                    artifact_roots = [folder/"metrics.json", folder/"实验效果.md"]
+                    artifact_roots = [folder/"metrics.json"]
                 paths = [p for r in artifact_roots for p in (r.rglob("*") if r.is_dir() else [r]) if p.is_file()]
                 json_write(complete, dict(elapsed_seconds=time.time()-started,
                     artifacts={str(p.relative_to(folder)): digest(p) for p in paths}))
