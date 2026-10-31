@@ -1,17 +1,10 @@
 """Rossmann panel: observed zeros are retained; missing days remain NaN."""
 from pathlib import Path
-import hashlib
 import numpy as np
 import pandas as pd
 
 KEYS = ['origin','series_id','target_date']
 FIELDS = ['Sales','Promo','SchoolHoliday','Open']
-
-def digest(path):
-    h=hashlib.sha256()
-    with Path(path).open('rb') as f:
-        for b in iter(lambda:f.read(4*1024*1024),b''): h.update(b)
-    return h.hexdigest()
 
 class RossmannData:
     def __init__(self, raw):
@@ -39,7 +32,7 @@ class RossmannData:
             missing_panel_days=int(len(self.ids)*len(self.dates)-len(frame)),closed_rows=int(frame.Open.eq(0).sum()),
             closed_nonzero_sales=int((frame.Open.eq(0)&frame.Sales.ne(0)&frame.Sales.notna()).sum()),
             pretest_factor_support=before.groupby(['Promo','SchoolHoliday']).size().rename('rows').reset_index().to_dict('records'),
-            raw_sha256={n:digest(self.raw/n) for n in ['train.csv','store.csv']},schedule=self.schedule,
+            raw_files=['train.csv','store.csv'],schedule=self.schedule,
             fit_tune=self.schedule['fit'][-8:])
 
     def columns(self,origin):

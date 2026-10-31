@@ -1,5 +1,6 @@
-"""Fetch the original, backbone sources pinned to upstream commits used by this release."""
+"""Fetch the PatchTST and SparseTSF source files listed in configs/upstream_sources.json."""
 from pathlib import Path
+import argparse
 import json
 import urllib.request
 
@@ -7,6 +8,8 @@ HERE = Path(__file__).resolve().parents[1]
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args()
     sources = json.loads((HERE / 'configs/upstream_sources.json').read_text(encoding='utf-8'))
     for name, record in sources.items():
         for destination, item in record['files'].items():
@@ -24,7 +27,7 @@ def main():
             path = HERE / 'vendor' / name / destination
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
-        print(name, record['commit'])
+        print(name, record['repository'])
     for name in ['vendor', 'vendor/patchtst', 'vendor/patchtst/layers', 'vendor/sparsetsf']:
         (HERE / name / '__init__.py').write_text('', encoding='utf-8')
     (HERE / 'vendor/SOURCES.json').write_text(json.dumps(sources, indent=2), encoding='utf-8')

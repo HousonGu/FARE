@@ -1,6 +1,5 @@
 """Shared I/O, frozen schedules, and origin-local raw data access."""
 from __future__ import annotations
-import hashlib
 import json
 import os
 import sys
@@ -14,14 +13,6 @@ sys.dont_write_bytecode = True
 from data_provider.paths import RAW_ROOT, RESULT_ROOT
 CONFIG = json.loads((ROOT / "configs/retail.json").read_text(encoding="utf-8"))
 KEYS = ["origin", "series_id", "target_date"]
-
-
-def digest(path):
-    h = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def json_write(path, obj):

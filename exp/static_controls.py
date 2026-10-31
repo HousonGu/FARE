@@ -83,3 +83,26 @@ def select_by_history(
         },
     }
     return cohort_prediction, selective_prediction, selected, override[series_code] >= 0, metadata
+
+
+def history_hard_control(frame, parts, actual, fit, weights, test):
+    """Historical hard selection among B, global static and the two 50:50 blends.
+
+    ``fit`` marks labelled development rows that fit the selector; ``test`` marks
+    the rows returned. Cohort/support thresholds and tie handling are those of
+    select_by_history, as in the Favorita/M5 control.
+    """
+    import pandas as pd
+
+    static = np.maximum(parts @ (np.asarray(weights) / 20), 0)
+    candidates = np.column_stack([
+        parts[:, 0], static, parts[:, [0, 1]].mean(1), parts[:, [0, 2]].mean(1),
+    ])
+    scale = frame.history_mean.to_numpy()
+    cohort = 2 * np.where(scale < 1, 0, np.where(scale < 5, 1, 2))
+    cohort += (frame.history_zero_fraction.to_numpy() >= .5).astype(int)
+    codes, _ = pd.factorize(frame.series_id, sort=True)
+    _, prediction, _, _, record = select_by_history(
+        actual, candidates, cohort, codes, fit, (0, 1, 2, 3),
+    )
+    return np.maximum(prediction[test], 0), record

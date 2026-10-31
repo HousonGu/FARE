@@ -1,0 +1,45 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "PIR",
+  "targets": [
+    {
+      "name": "pir_bank",
+      "fn": "runtime_extra:pir_bank",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "pir_dev_retrieval",
+      "fn": "runtime_extra:pir_dev_retrieval",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "pir_train",
+      "fn": "runtime_extra:pir_train",
+      "column": "fusion_fit"
+    },
+    {
+      "name": "pir_test_retrieval",
+      "fn": "runtime_extra:pir_test_retrieval",
+      "column": "reference"
+    },
+    {
+      "name": "pir_predict",
+      "fn": "runtime_extra:pir_predict",
+      "column": "test_predict"
+    }
+  ],
+  "required_targets": {
+    "fit": [
+      "pir_bank",
+      "pir_dev_retrieval",
+      "pir_train"
+    ],
+    "test": [
+      "pir_test_retrieval",
+      "pir_predict"
+    ]
+  }
+}

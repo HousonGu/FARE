@@ -1,0 +1,65 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "TimeFuse",
+  "targets": [
+    {
+      "name": "reference_run",
+      "fn": "runtime:reference_run",
+      "column": "reference"
+    },
+    {
+      "name": "raw_bank",
+      "fn": "runtime:raw_bank"
+    },
+    {
+      "name": "select",
+      "fn": "runtime:select_reference"
+    },
+    {
+      "name": "dev_meta_features",
+      "fn": "runtime:timefuse_dev_features",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "test_meta_features",
+      "fn": "runtime:timefuse_test_features",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "train",
+      "fn": "runtime:fit_timefuse",
+      "column": "fusion_fit"
+    },
+    {
+      "name": "predict",
+      "fn": "runtime:predict_timefuse",
+      "column": "test_predict"
+    }
+  ],
+  "bank": {
+    "fn": "runtime:raw_bank",
+    "params": [
+      "history",
+      "future",
+      "factor1",
+      "factor2"
+    ],
+    "axis": 0,
+    "min_keep": 8
+  },
+  "required_targets": {
+    "reference": [
+      "reference_run",
+      "raw_bank"
+    ],
+    "fusion": [
+      "dev_meta_features",
+      "test_meta_features",
+      "train",
+      "predict"
+    ]
+  }
+}

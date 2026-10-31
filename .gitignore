@@ -22,8 +22,6 @@ data/
 models/
 outputs/
 results/
-frn_results/
-open_frn/
 third_party/
 vendor/
 *.parquet

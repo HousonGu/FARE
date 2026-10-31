@@ -8,7 +8,7 @@ from data_provider.retail import CONFIG, KEYS, checked_merge, parquet_write, jso
 from fare.fusion import base_features, historical_features, fit_gate, predict_gate
 
 
-def flat_objective(theta, x, y, parts, penalty=0.002):
+def flat_objective(theta, x, y, parts, penalty=0.001):
     k = x.shape[1]
     logits = np.column_stack([np.zeros(len(x)), x @ theta[:k], x @ theta[k:]])
     w = softmax(logits, axis=1)

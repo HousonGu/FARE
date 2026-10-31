@@ -1,0 +1,14 @@
+# RAF and LightGBM residual correction. Install a CUDA build of torch matching this pin first.
+numpy==2.2.4
+pandas==2.2.3
+scipy==1.15.2
+scikit-learn==1.6.1
+pyarrow==23.0.1
+lightgbm==4.6.0
+chronos-forecasting==2.3.2
+transformers==4.57.1
+accelerate==1.5.2
+einops==0.8.1
+threadpoolctl==3.6.0
+safetensors==0.5.3
+torch==2.5.1

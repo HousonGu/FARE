@@ -11,7 +11,7 @@ from scipy.optimize import minimize
 from scipy.special import expit
 from threadpoolctl import threadpool_limits
 from data_provider.panel import EXPECTED
-from exp.io import KEYS, sha, merge, metric, pool, save_parquet, write_json, seal, verify, verify_file, seal_file
+from exp.io import KEYS, merge, metric, pool, save_parquet, write_json, seal, verify, verify_file
 
 
 class History:
@@ -251,7 +251,6 @@ def run_fusion(panel, backbone, destination, kind, seed, config):
                 print('fit gate', panel.dataset, kind, seed, variant, flush=True)
                 fitted['variants'][variant] = fit_variant(raw, actual, parts, meta, variant, config)
         write_json(fits_path, fitted)
-        seal_file(fits_path)
     weekly = {}
     for origin in panel.schedule['test']:
         path = destination/'predictions'/f'{origin}.parquet'

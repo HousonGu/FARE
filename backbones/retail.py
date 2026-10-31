@@ -1,10 +1,10 @@
-"""Backbone stages: pinned Chronos-2 and validation-tuned LightGBM."""
+"""Backbone stages: Chronos-2 and validation-tuned LightGBM."""
 import gc
 import importlib.metadata
 import itertools
 import numpy as np
 import pandas as pd
-from data_provider.retail import CONFIG, ROOT, KEYS, metric, parquet_write, json_write, digest, check_prediction
+from data_provider.retail import CONFIG, ROOT, KEYS, metric, parquet_write, json_write, check_prediction
 
 
 def chronos(data, schedule, folder, device, model_path=None):
@@ -13,15 +13,6 @@ def chronos(data, schedule, folder, device, model_path=None):
     if importlib.metadata.version("chronos-forecasting") != "2.3.2":
         raise RuntimeError("Chronos requires chronos-forecasting==2.3.2")
     kwargs = dict(device_map=device)
-    if model_path is None:
-        kwargs["revision"] = CONFIG["chronos_revision"]
-    else:
-        # A local checkpoint is accepted only if it matches the pinned weights.
-        from backbones.chronos_protocol import EXPECTED_MODEL
-        from pathlib import Path
-        for name, sha in EXPECTED_MODEL.items():
-            if digest(Path(model_path)/name) != sha:
-                raise ValueError(f"Local model does not match the pinned checkpoint: {name}")
     model = None
     reused = {}
     for origin in schedule["dev"] + schedule["test"]:
@@ -52,7 +43,7 @@ def chronos(data, schedule, folder, device, model_path=None):
         check_prediction(pred)
         parquet_write(path, pred)
         print("chronos", origin, len(pred), flush=True)
-    json_write(folder/"model.json", dict(model=CONFIG["chronos_model"], revision=CONFIG["chronos_revision"], reused=reused))
+    json_write(folder/"model.json", dict(model=CONFIG["chronos_model"], reused=reused))
     del model
     gc.collect()
     if torch.cuda.is_available():

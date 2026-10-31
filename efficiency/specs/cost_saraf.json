@@ -1,0 +1,50 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "SARAF",
+  "targets": [
+    {
+      "name": "saraf_bank",
+      "fn": "runtime_extra:saraf_bank",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "saraf_training_windows",
+      "fn": "runtime_extra:saraf_training_windows",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "saraf_train",
+      "fn": "runtime_extra:saraf_train",
+      "column": "fusion_fit"
+    },
+    {
+      "name": "saraf_load_bank",
+      "fn": "runtime_extra:saraf_load_bank"
+    },
+    {
+      "name": "saraf_load_model",
+      "fn": "runtime_extra:saraf_load_model"
+    },
+    {
+      "name": "saraf_predict",
+      "fn": "runtime_extra:saraf_predict",
+      "column": "test_predict"
+    }
+  ],
+  "required_targets": {
+    "fit": [
+      "saraf_bank",
+      "saraf_training_windows",
+      "saraf_train"
+    ],
+    "test": [
+      "saraf_predict"
+    ]
+  },
+  "not_applicable_columns": [
+    "reference"
+  ]
+}

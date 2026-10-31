@@ -1,0 +1,21 @@
+{
+  "version": "pfrp-panel-v1-20261015",
+  "seeds": [20261005, 20261006, 20261007],
+  "context": 56,
+  "horizon": 7,
+  "encoder_epochs": 80,
+  "fusion_epochs": 20,
+  "batch_size": 256,
+  "learning_rate": 0.001,
+  "topk": 8,
+  "hidden": 32,
+  "medoids": 2000,
+  "medoid_max_iter": 300,
+  "distance_block": 512,
+  "cpu_threads": 8,
+  "selection": "lowest tune WAPE; first epoch breaks ties",
+  "memory": "first half of source train origins; global across all eligible series",
+  "fusion": "second half of source train origins",
+  "medoid_initialization": "heuristic: K smallest total cosine distances; stable row tie",
+  "negative_predictions": "clip zero only for selection and scoring"
+}

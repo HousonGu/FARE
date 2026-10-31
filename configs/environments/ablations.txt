@@ -1,0 +1,6 @@
+# Candidate-path controls and hyperparameter sensitivity. CPU only.
+numpy>=1.24,<3
+pandas>=2.0,<3
+scipy>=1.10,<2
+pyarrow>=12,<24
+threadpoolctl>=3.1,<4

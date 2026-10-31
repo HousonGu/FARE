@@ -1,20 +1,11 @@
 """Official Rohlik Sales V2 panel, with missing observations retained as NaN."""
 from pathlib import Path
-import hashlib
 import numpy as np
 import pandas as pd
 
 KEYS = ['origin', 'series_id', 'target_date']
 DISCOUNTS = [f'type_{i}_discount' for i in range(7)]
 FILES = ['sales_train.csv', 'sales_test.csv', 'inventory.csv', 'calendar.csv']
-
-
-def digest(path):
-    h = hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b''):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 class RohlikData:
@@ -86,7 +77,7 @@ class RohlikData:
             excluded_inputs=['availability', 'total_orders', 'sell_price_main', 'solution', 'test_weights'],
             grouping=['warehouse', 'L2_category_name_en'], groups=len(self.groups), max_group_size=max(map(len, self.groups)),
             pretest_factor_support=before.groupby(['Discount', 'holiday']).size().rename('rows').reset_index().to_dict('records'),
-            raw_sha256={name: digest(self.raw / name) for name in FILES}, schedule=self.schedule,
+            raw_files=list(FILES), schedule=self.schedule,
             fit_tune=self.schedule['fit'][-8:])
         self.audit['coverage'] = [dict(origin=o, split=split, eligible_series=len(self.eligible(o)),
                                       planned_rows=len(self.eligible(o)) * 7)

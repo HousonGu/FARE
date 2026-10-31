@@ -1,0 +1,32 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "Chronos-2 B",
+  "targets": [
+    {
+      "name": "predict_backbone",
+      "fn": "runtime_extra:predict_backbone",
+      "column": "test_predict"
+    },
+    {
+      "name": "predict_backbone_dev",
+      "fn": "runtime_extra:predict_backbone_dev"
+    }
+  ],
+  "required_targets": {
+    "backbone": [
+      "predict_backbone"
+    ],
+    "backbone_dev": [
+      "predict_backbone_dev",
+      "predict_backbone"
+    ]
+  },
+  "not_applicable_columns": [
+    "reference",
+    "feature_prepare",
+    "fusion_fit"
+  ]
+}

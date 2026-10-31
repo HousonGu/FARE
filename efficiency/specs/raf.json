@@ -1,0 +1,45 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "RAF",
+  "not_applicable_columns": [
+    "fusion_fit"
+  ],
+  "targets": [
+    {
+      "name": "build_retrieval_plan",
+      "fn": "runtime:raf_plan",
+      "column": "reference"
+    },
+    {
+      "name": "load_pipeline",
+      "fn": "backbone:load_pipeline"
+    },
+    {
+      "name": "raf_predict",
+      "fn": "runtime:raf_predict",
+      "column": "test_predict"
+    },
+    {
+      "name": "augment_from_plan",
+      "fn": "raf:augment_from_plan"
+    },
+    {
+      "name": "predict_context",
+      "fn": "backbone:predict_context"
+    },
+    {
+      "name": "token_l2_distances",
+      "fn": "raf:token_l2_distances"
+    }
+  ],
+  "required_targets": {
+    "raf": [
+      "load_pipeline",
+      "build_retrieval_plan",
+      "raf_predict"
+    ]
+  }
+}

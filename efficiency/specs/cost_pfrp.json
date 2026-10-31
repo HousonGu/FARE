@@ -1,0 +1,47 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "PFRP",
+  "targets": [
+    {
+      "name": "pfrp_encoder",
+      "fn": "runtime_extra:pfrp_encoder",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "pfrp_memory",
+      "fn": "runtime_extra:pfrp_memory",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "pfrp_train",
+      "fn": "runtime_extra:pfrp_train",
+      "column": "fusion_fit"
+    },
+    {
+      "name": "pfrp_load",
+      "fn": "runtime_extra:pfrp_load"
+    },
+    {
+      "name": "pfrp_predict",
+      "fn": "runtime_extra:pfrp_predict",
+      "column": "test_predict"
+    }
+  ],
+  "required_targets": {
+    "fit": [
+      "pfrp_encoder",
+      "pfrp_memory",
+      "pfrp_train"
+    ],
+    "test": [
+      "pfrp_load",
+      "pfrp_predict"
+    ]
+  },
+  "not_applicable_columns": [
+    "reference"
+  ]
+}

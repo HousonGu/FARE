@@ -1,0 +1,66 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "FARE",
+  "scaling_targets": [
+    "reference_run"
+  ],
+  "targets": [
+    {
+      "name": "reference_run",
+      "fn": "runtime:reference_run",
+      "column": "reference"
+    },
+    {
+      "name": "raw_bank",
+      "fn": "runtime:raw_bank"
+    },
+    {
+      "name": "select",
+      "fn": "runtime:select_reference"
+    },
+    {
+      "name": "design",
+      "fn": "runtime:design_fare",
+      "column": "feature_prepare"
+    },
+    {
+      "name": "fit_gate",
+      "fn": "runtime:fit_fare",
+      "column": "fusion_fit"
+    },
+    {
+      "name": "predict_gate",
+      "fn": "runtime:predict_fare",
+      "column": "test_predict"
+    }
+  ],
+  "bank": {
+    "fn": "runtime:raw_bank",
+    "params": [
+      "history",
+      "future",
+      "factor1",
+      "factor2"
+    ],
+    "axis": 0,
+    "min_keep": 8
+  },
+  "required_targets": {
+    "reference": [
+      "reference_run",
+      "raw_bank"
+    ],
+    "reference_scaling": [
+      "reference_run",
+      "raw_bank"
+    ],
+    "fusion": [
+      "design",
+      "fit_gate",
+      "predict_gate"
+    ]
+  }
+}

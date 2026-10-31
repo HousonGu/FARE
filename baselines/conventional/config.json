@@ -1,0 +1,35 @@
+{
+  "version": "conventional-retail-v1",
+  "context": 56,
+  "horizon": 7,
+  "season_length": 7,
+  "datasets": [
+    "favorita",
+    "m5",
+    "rossmann",
+    "rohlik"
+  ],
+  "methods": [
+    "seasonal_naive",
+    "ets",
+    "sarima",
+    "ridge",
+    "xgboost"
+  ],
+  "seeds": [
+    20261005,
+    20261006,
+    20261007
+  ],
+  "selection_seed": 20261005,
+  "n_jobs": 16,
+  "xgb_nthread": 16,
+  "batch_rows": 2048,
+  "xgb_rounds": 300,
+  "xgb_checkpoint_rounds": 25,
+  "xgb_max_bin": 128,
+  "stats_failure_policy": "raise",
+  "selection": "Pooled WAPE on the last eight fit origins; train on preceding fit origins; ties prefer earlier candidate. Refit on all fit origins. No development/test tuning.",
+  "statistical_refitting": "At every forecast origin, fit the selected fixed statistical model on its most recent 56 observed days; select no orders or types on test targets.",
+  "input_policy": "seasonal_naive/ets/sarima: history only; ridge/xgboost: same history plus permitted future factors and deterministic dates; no Open/price/availability or future sales features"
+}

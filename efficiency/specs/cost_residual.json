@@ -1,0 +1,35 @@
+{
+  "root": "..",
+  "sys_path": [
+    "."
+  ],
+  "method": "LightGBM residual",
+  "targets": [
+    {
+      "name": "residual_fit",
+      "fn": "runtime_extra:residual_fit",
+      "column": "fusion_fit"
+    },
+    {
+      "name": "residual_load",
+      "fn": "runtime_extra:residual_load"
+    },
+    {
+      "name": "residual_predict",
+      "fn": "runtime_extra:residual_predict",
+      "column": "test_predict"
+    }
+  ],
+  "required_targets": {
+    "fit": [
+      "residual_fit"
+    ],
+    "test": [
+      "residual_load",
+      "residual_predict"
+    ]
+  },
+  "not_applicable_columns": [
+    "reference"
+  ]
+}

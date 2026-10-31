@@ -1,0 +1,27 @@
+{
+  "version": "raf-residual-retail-v1",
+  "context": 56,
+  "horizon": 7,
+  "raf_context": 119,
+  "datasets": [
+    "favorita",
+    "m5",
+    "rossmann",
+    "rohlik"
+  ],
+  "residual_seeds": [
+    20261005,
+    20261006,
+    20261007
+  ],
+  "residual_rounds": 300,
+  "raf_seed": 20261005,
+  "backbone_training": false,
+  "backbone_finetuning": false,
+  "raf_training": false,
+  "model": "amazon/chronos-2 downloaded to a local folder (see docs/REPRODUCE.md)",
+  "raf_library": "all legal weekly fit windows per query series; cold-start uses 64 deterministic evenly spaced global anchors from last fit origin",
+  "raf_encoder": "same frozen Chronos-2 official embed API",
+  "information": "original seven weekday one-hots and two known factors retained; no future observed target",
+  "residual_training": "chronological dev 80/20 selection; all dev final fit; no test selection or error updates"
+}

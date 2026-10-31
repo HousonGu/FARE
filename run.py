@@ -15,7 +15,7 @@ BACKBONES = ("chronos", "lightgbm", "tft", "patchtst", "sparsetsf")
 COVERAGE = {
     "favorita": list(BACKBONES),
     "m5": list(BACKBONES),
-    "rossmann": ["chronos", "patchtst", "sparsetsf"],
+    "rossmann": list(BACKBONES),
     "rohlik": list(BACKBONES),
 }
 STAGES = ("audit", "references", "backbone", "fusion", "score", "all")
@@ -44,7 +44,7 @@ def parser():
     result.add_argument("--raw", type=Path,
                         help="Direct raw CSV directory override for Rossmann/Rohlik raw-data runners")
     result.add_argument("--data-root", type=Path, default=ROOT / "data/prepared",
-                        help="Parent of sealed panels for PatchTST/SparseTSF")
+                        help="Parent of prepared panels for PatchTST/SparseTSF")
     result.add_argument("--out", type=Path, help="Output root; defaults to results/DATASET/BACKBONE")
     result.add_argument("--device", default="cuda")
     result.add_argument("--list", action="store_true", help="Show the available dataset/backbone combinations")
@@ -56,8 +56,7 @@ def build_plan(args):
     if args.dataset not in COVERAGE:
         raise ValueError("--dataset is required unless --list is used")
     if args.backbone not in COVERAGE[args.dataset]:
-        raise ValueError("This release does not include a Rossmann LightGBM/TFT adapter. "
-                         "Choose an available backbone; see docs/REPRODUCE.md.")
+        raise ValueError("Unsupported dataset/backbone combination; see docs/REPRODUCE.md.")
     raw_root = args.raw_root.expanduser().resolve()
     if args.raw is not None and (args.dataset in ("favorita", "m5") or args.backbone in ("patchtst", "sparsetsf")):
         raise ValueError("--raw is for the Rossmann/Rohlik raw-data runners. Use --raw-root for Favorita/M5 "
@@ -75,7 +74,7 @@ def build_plan(args):
         stage = {"backbone": "train", "score": "fusion"}.get(args.stage, args.stage)
         native = ["--dataset", args.dataset, "--model", args.backbone,
                   "--data-root", str(args.data_root.expanduser().resolve()), "--stage", stage]
-        notes.append("Requires a prepared, sealed panel and separately fetched upstream model source.")
+        notes.append("Requires a prepared panel and separately fetched upstream model source.")
     elif args.dataset in ("favorita", "m5"):
         module = "exp.retail"
         stage = {"backbone": args.backbone, "fusion": "gates"}.get(args.stage, args.stage)
@@ -87,7 +86,7 @@ def build_plan(args):
         stage = {"backbone": "chronos", "fusion": "gates"}.get(args.stage, args.stage)
         native = ["--raw", str(raw_directory), "--stage", stage]
     else:
-        module = "exp.rohlik_supervised"
+        module = "exp." + args.dataset + "_supervised"
         stage = {"backbone": args.backbone, "fusion": "score"}.get(args.stage, args.stage)
         native = ["--raw", str(raw_directory), "--backbone", args.backbone, "--stage", stage]
         notes.append("This runner fits the development gates and scores test outputs together in its score stage.")
@@ -98,8 +97,7 @@ def main(argv=None):
     command_parser = parser()
     args = command_parser.parse_args(argv)
     if args.list:
-        print(json.dumps({"datasets": COVERAGE, "stages": list(STAGES),
-                          "not_included": "Rossmann LightGBM/TFT"}, indent=2))
+        print(json.dumps({"datasets": COVERAGE, "stages": list(STAGES)}, indent=2))
         return 0
     try:
         plan = build_plan(args)

@@ -4,12 +4,11 @@ import argparse,json,os,sys,time,platform,importlib.metadata
 import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
-from exp.io import source_hashes
-from data_provider.rossmann import RossmannData,KEYS,digest
+from data_provider.rossmann import RossmannData,KEYS
 from exp.rossmann_references import references
 from exp.rossmann_gates import run_gates
 HERE=Path(__file__).resolve().parent
-METHODS=['backbone','shape_half','factor_half','global_static','soft_history','soft_no_history','flat_softmax']
+METHODS=['backbone','shape_half','factor_half','global_static','history_hard','soft_history','soft_no_history','flat_softmax']
 
 def json_write(path,obj):
     path.parent.mkdir(parents=True,exist_ok=True); tmp=path.with_suffix(path.suffix+'.tmp')
@@ -27,12 +26,10 @@ def merge(left,right):
 def verified_week(path,expected,columns):
     frame=pd.read_parquet(path); merge(expected,frame)
     if frame.duplicated(KEYS).any() or not np.isfinite(frame[columns].to_numpy(float)).all(): raise ValueError('Invalid weekly cache')
-    marker=path.with_suffix('.sha256.json')
-    if not marker.exists() or json.loads(marker.read_text())['sha256']!=digest(path): raise ValueError('Weekly checksum missing or changed')
     return frame
 
 def save_week(path,frame):
-    parquet_write(path,frame); json_write(path.with_suffix('.sha256.json'),dict(sha256=digest(path),rows=len(frame)))
+    parquet_write(path,frame)
 
 from backbones.rossmann_chronos import chronos_week
 
@@ -57,15 +54,15 @@ def main():
     expected=json.loads((HERE.parent/'configs/rossmann.json').read_text(encoding='utf-8-sig'))
     if config!=expected: raise ValueError('Protocol change requires a new version of the code and output directory')
     out=args.out; out.mkdir(parents=True,exist_ok=True)
-    identity=dict(config=config,raw=data.audit['raw_sha256'],schedule=data.schedule,code=source_hashes(),environment=environment(),device=args.device)
+    identity=dict(config=config,schedule=data.schedule,environment=environment(),device=args.device)
     manifest=out/'manifest.json'
-    if manifest.exists() and json.loads(manifest.read_text(encoding='utf-8'))!=identity: raise ValueError('Input/code/environment/device changed: use a new output directory')
+    if manifest.exists() and json.loads(manifest.read_text(encoding='utf-8'))!=identity: raise ValueError('Config/schedule/environment/device changed: use a new output directory')
     with (out/'RUNNING.lock').open('x') as f: f.write(str(os.getpid()))
     started=time.perf_counter()
     try:
         if (out/'complete.json').exists():
-            for rel,sha in json.loads((out/'complete.json').read_text(encoding='utf-8'))['artifacts'].items():
-                if digest(out/rel)!=sha: raise ValueError('Completed artifact changed: '+rel)
+            for rel in json.loads((out/'complete.json').read_text(encoding='utf-8'))['artifacts']:
+                if not (out/rel).is_file(): raise ValueError('Completed artifact missing: '+rel)
             return
         json_write(manifest,identity); json_write(out/'audit.json',data.audit)
         if args.stage=='audit': return
@@ -78,7 +75,7 @@ def main():
                     for origin in origins:
                         path=out/stage/(origin+'.parquet'); keys=data.window(origin)[-1]
                         cols=['shape_retrieval','factor_retrieval'] if stage=='references' else ['backbone_forecast']
-                        if path.exists() and path.with_suffix('.sha256.json').exists(): verified_week(path,keys,cols); continue
+                        if path.exists(): verified_week(path,keys,cols); continue
                         if stage=='references': frame=references(data,origin,config['reference_batch'])
                         else:
                             if model is None:
@@ -88,7 +85,7 @@ def main():
                                 if args.device.startswith('cuda'):
                                     # Force a real kernel before loading the model, catching incompatible GPU builds.
                                     (torch.ones(8,device=args.device)*2).sum().item()
-                                model=Chronos2Pipeline.from_pretrained(config['chronos_model'],revision=config['chronos_revision'],device_map=args.device)
+                                model=Chronos2Pipeline.from_pretrained(config['chronos_model'],device_map=args.device)
                             frame=chronos_week(data,origin,model,config)
                         save_week(path,frame); verified_week(path,keys,cols)
                         print(stage,origin,len(frame),flush=True)
@@ -112,7 +109,7 @@ def main():
                     result=dict(status='complete',test_weeks=26,coverage=coverage,overall={m:metric(scored,m) for m in METHODS},business_days={m:metric(scored[scored.open.eq(1)],m) for m in METHODS},weekly={o:{m:metric(p[p.actual.notna()],m) for m in METHODS} for o,p in frame.groupby('origin')})
                     if set(frame.origin)!=set(data.schedule['test']): raise ValueError('Incomplete test origins')
                     parquet_write(out/'scored_predictions.parquet',scored); json_write(out/'metrics.json',result)
-                    artifacts={str(p.relative_to(out)):digest(p) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json']}
+                    artifacts=sorted(str(p.relative_to(out)) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json'])
                     json_write(out/'complete.json',dict(status='complete',artifacts=artifacts))
         json_write(out/'status.json',dict(status='complete' if (out/'complete.json').exists() else 'incomplete',last_stage=args.stage,elapsed_seconds=time.perf_counter()-started))
     finally: (out/'RUNNING.lock').unlink(missing_ok=True)

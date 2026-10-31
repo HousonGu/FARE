@@ -9,7 +9,7 @@ import time
 import numpy as np
 import torch
 from data_provider.panel import Windows
-from exp.io import save_parquet, write_json, seal_file, verify_file, metric, merge
+from exp.io import save_parquet, write_json, verify_file, metric, merge
 
 
 def seed_all(seed):
@@ -69,7 +69,6 @@ def atomic_torch(path, value):
     temporary = path.with_name(path.name + '.tmp')
     torch.save(value, temporary)
     os.replace(temporary, path)
-    seal_file(path)
 
 
 def cpu_weights(model):
@@ -192,14 +191,12 @@ def selection(panel, kind, folder, device, config):
                            config['seeds'][0], directory/'resume.pt', tune=tune_windows)
             result.update(index=index, params=params)
             write_json(result_path, result)
-            seal_file(result_path)
             del model
         trials.append(result)
     best = min(trials, key=lambda r: (r['best_wape'], r['best_epoch'], r['index']))
     result = dict(best=best, trials=trials, train=panel.schedule['train'], tune=panel.schedule['tune'],
                   selection_seed=config['seeds'][0], protocol=config['selection'])
     write_json(path, result)
-    seal_file(path)
     return result
 
 
@@ -243,7 +240,6 @@ def run_backbone(panel, kind, folder, device, config):
                            seed, directory/'resume.pt')
             write_json(directory/'training.json', dict(**result, seed=seed, params=selected['params'],
                 parameter_count=sum(p.numel() for p in model.parameters()), fit=panel.schedule['fit']))
-            seal_file(directory/'training.json')
             atomic_torch(weights_path, cpu_weights(model))
         for origin in panel.schedule['dev'] + panel.schedule['test']:
             path = directory/'predictions'/f'{origin}.parquet'

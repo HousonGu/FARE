@@ -29,10 +29,10 @@
     20261006,
     20261007
   ],
-  "gate_penalty": 0.002,
+  "gate_penalty": 0.001,
   "gate_maxiter": 250,
-  "gate_ftol": 3e-09,
-  "gate_gtol": 3e-06,
+  "gate_ftol": 1e-09,
+  "gate_gtol": 1e-06,
   "shrink_rows": 14.0,
   "reference_query_batch": 8,
   "backbone_seeds": [

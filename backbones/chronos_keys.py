@@ -1,4 +1,4 @@
-"""Exact same-key merge for the pinned Chronos prediction adapters."""
+"""Exact same-key merge for the Chronos prediction adapters."""
 KEYS = ['origin', 'series_id', 'target_date']
 
 

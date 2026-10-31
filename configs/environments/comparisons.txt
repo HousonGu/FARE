@@ -1,0 +1,6 @@
+# PFRP, PIR and SARAF. Install a CUDA-compatible PyTorch build first.
+numpy>=1.26,<3
+pandas>=2.2,<3
+pyarrow>=17
+threadpoolctl>=3.5
+tqdm>=4.64

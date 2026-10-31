@@ -152,11 +152,10 @@ def train(model, train_set, device, epochs, valid=None, checkpoint=None):
                 stale += 1
         if checkpoint is not None:
             import os
-            from data_provider.supervised_features import seal
             state=dict(model=model.state_dict(),optimizer=optimizer.state_dict(),best=best,best_epoch=best_epoch,
                 stale=stale,history=history,epoch=epoch,python_rng=random.getstate(),numpy_rng=np.random.get_state(),
                 torch_rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [])
-            torch.save(state,str(checkpoint)+'.tmp'); os.replace(str(checkpoint)+'.tmp',checkpoint); seal(checkpoint)
+            torch.save(state,str(checkpoint)+'.tmp'); os.replace(str(checkpoint)+'.tmp',checkpoint)
     return dict(history=history, best_epoch=best_epoch if valid is not None else epochs,
                 best_validation_wape=best if valid is not None else None)
 
@@ -206,8 +205,6 @@ def run(data, schedule, folder, device):
             torch.save(model.state_dict(), str(checkpoint)+".tmp")
             import os
             os.replace(str(checkpoint)+".tmp", checkpoint)
-            from data_provider.supervised_features import seal
-            seal(checkpoint)
             json_write(folder/f"seed_{seed}_fit.json", dict(seed=seed, windows=len(fit_set), **log))
         model.eval()
         for origin in schedule["dev"] + schedule["test"]:

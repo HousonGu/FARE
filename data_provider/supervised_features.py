@@ -1,4 +1,4 @@
-import hashlib,json,os
+import json,os
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -6,20 +6,12 @@ HERE=Path(__file__).resolve().parent
 ROOT=HERE.parent
 CONFIG=json.loads((ROOT/"configs/rohlik_supervised.json").read_text())
 KEYS=["origin","series_id","target_date"]
-def digest(path):
-    h = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
 def json_write(path, obj):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
     os.replace(tmp, path)
-    seal(path)
 
 def parquet_write(path, frame):
     path = Path(path)
@@ -27,21 +19,11 @@ def parquet_write(path, frame):
     tmp = path.with_suffix(".tmp.parquet")
     frame.to_parquet(tmp, index=False)
     os.replace(tmp, path)
-    seal(path)
-
-
-def seal(path):
-    path=Path(path)
-    marker=path.with_name(path.name+'.sha256')
-    tmp=marker.with_name(marker.name+'.tmp')
-    tmp.write_text(digest(path),encoding='ascii')
-    os.replace(tmp,marker)
 
 
 def verify(path):
-    path=Path(path)
-    if path.with_name(path.name+'.sha256').read_text(encoding='ascii') != digest(path):
-        raise ValueError('Artifact changed: '+str(path))
+    if not Path(path).is_file():
+        raise ValueError('Missing artifact: '+str(path))
 
 def checked_merge(left, right):
     merged = left.merge(right, on=KEYS, how="outer", validate="one_to_one", indicator=True)

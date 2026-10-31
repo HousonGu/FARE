@@ -7,7 +7,7 @@ import shutil
 import sys
 import numpy as np
 from data_provider.panel import Panel
-from exp.io import sha, write_json, seal
+from exp.io import write_json, seal
 
 HERE = Path(__file__).resolve().parent
 REPRO = HERE.parent
@@ -52,7 +52,7 @@ def prepare(dataset, raw_root, reference_root, out):
             raise FileNotFoundError('Run the original reference stage first: ' + str(path))
         target = out / 'references' / path.name
         shutil.copy2(path, target)
-        provenance[origin] = sha(target)
+        provenance[origin] = str(path)
     panel = Panel(out, check=False)
     write_json(out / 'audit.json', panel.audit())
     write_json(out / 'reference_provenance.json', provenance)

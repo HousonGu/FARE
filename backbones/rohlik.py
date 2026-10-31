@@ -1,4 +1,4 @@
-"""Backbone stages: pinned Chronos-2 and validation-tuned LightGBM."""
+"""Backbone stages: Chronos-2 and validation-tuned LightGBM."""
 
 import gc
 
@@ -10,7 +10,7 @@ import numpy as np
 
 import pandas as pd
 
-from data_provider.supervised_features import CONFIG, ROOT, KEYS, metric, parquet_write, json_write, digest, check_prediction
+from data_provider.supervised_features import CONFIG, ROOT, KEYS, metric, parquet_write, json_write, check_prediction
 
 def tree_data(data, origins):
     xs, ys, ws = [], [], []
@@ -68,8 +68,6 @@ def lightgbm(data, schedule, folder):
         booster.save_model(str(model_path)+".tmp")
         import os
         os.replace(str(model_path)+".tmp", model_path)
-        from data_provider.supervised_features import seal
-        seal(model_path)
         del x, y, w
         gc.collect()
     for origin in schedule["dev"]+schedule["test"]:

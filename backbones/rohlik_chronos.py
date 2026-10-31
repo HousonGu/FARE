@@ -1,4 +1,4 @@
-"""Pinned Chronos-2 dataset adapter; no test labels enter prediction."""
+"""Chronos-2 dataset adapter; no test labels enter prediction."""
 import numpy as np
 import pandas as pd
 from data_provider.rohlik import KEYS

@@ -53,10 +53,10 @@ Both gates start at zero parameters. The loss is:
 
 ```text
 sum(sqrt((prediction - actual)**2 + 1)) / sum(actual)
-    + 0.002 * sum(non_intercept_parameters**2)
+    + 0.001 * sum(non_intercept_parameters**2)
 ```
 
-The optimizer is SciPy L-BFGS-B with analytical gradients, `maxiter=250`, `ftol=3*1e-9`, and `gtol=3*1e-6`. Optimization failure raises an error. The low-level `fit_gate` / `predict_gate` functions accept an already standardized design matrix including an intercept. The `fit_fusion` wrapper fits normalization on the supplied development features and saves it with the gate parameters. Neither wrapper chooses temporal splits for the caller.
+The optimizer is SciPy L-BFGS-B with analytical gradients, `maxiter=250`, `ftol=1e-9`, and `gtol=1e-6`. Optimization failure raises an error. The low-level `fit_gate` / `predict_gate` functions accept an already standardized design matrix including an intercept. The `fit_fusion` wrapper fits normalization on the supplied development features and saves it with the gate parameters. Neither wrapper chooses temporal splits for the caller.
 
 ## Scoring
 

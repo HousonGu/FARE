@@ -11,7 +11,7 @@ import time
 import torch
 from threadpoolctl import threadpool_limits
 from data_provider.panel import Panel
-from exp.io import HERE, sha, write_json, source_hashes, verify
+from exp.io import HERE, write_json, verify
 from backbones.neural import configure, run_backbone
 from exp.neural_fusion import run_fusion
 
@@ -24,8 +24,7 @@ def environment(device):
 
 
 def identity(panel, config, device):
-    return dict(config=config, code=source_hashes(), data_seal_sha256=sha(panel.folder/'complete.json'),
-                schedule=panel.schedule, environment=environment(device))
+    return dict(config=config, data=str(panel.folder), schedule=panel.schedule, environment=environment(device))
 
 
 def arguments():

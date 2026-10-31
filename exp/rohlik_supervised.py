@@ -4,10 +4,9 @@ import argparse,json,os,platform,sys,time,importlib.metadata
 import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
-from exp.io import source_hashes
 from data_provider.rohlik_supervised import Data
 from data_provider.supervised_features import CONFIG,verify
-from data_provider.rohlik import KEYS,digest
+from data_provider.rohlik import KEYS
 from exp.rohlik_references import references
 from exp.rohlik_gates import run_gates
 from exp.rohlik import json_write,save_week,verified_week,merge,metric,METHODS
@@ -19,8 +18,7 @@ def identity(data,device):
     for n in ['numpy','pandas','scipy','torch','lightgbm','pytorch-forecasting','lightning','pyarrow']:
         try: versions[n]=importlib.metadata.version(n)
         except importlib.metadata.PackageNotFoundError: versions[n]=None
-    return dict(config=CONFIG,raw=data.source.audit['raw_sha256'],schedule=data.schedule,
-                code=source_hashes(),device=device,
+    return dict(config=CONFIG,schedule=data.schedule,device=device,
                 environment=dict(python=platform.python_version(),packages=versions))
 
 
@@ -34,11 +32,8 @@ def reference_stage(data,out,source):
     origins=data.schedule['dev']+data.schedule['test']
     if source:
         manifest=json.loads((source/'manifest.json').read_text(encoding='utf-8'))
-        if manifest['raw']!=data.source.audit['raw_sha256'] or manifest['schedule']!=data.source.schedule:
-            raise ValueError('Reference source data/schedule differs')
-        current = source_hashes()
-        for name in ['data_provider/rohlik.py','exp/rohlik_references.py','src/fare/retrieval.py']:
-            if manifest['code'].get(name)!=current[name]: raise ValueError('Reference source code differs: '+name)
+        if manifest['schedule']!=data.source.schedule:
+            raise ValueError('Reference source schedule differs')
     for o in origins:
         p=out/'references'/f'{o}.parquet'; keys=data.source.window(o)[-1]
         if p.exists(): verified_week(p,keys,['shape_retrieval','factor_retrieval']); continue
@@ -75,12 +70,12 @@ def fuse_and_score(data,out,backbone='all'):
     origins=data.schedule['dev']+data.schedule['test']
     for kind in (['lightgbm','tft'] if backbone == 'all' else [backbone]):
         for seed in CONFIG['backbone_seeds']:
-            dest=out/'comparisons'/kind/str(seed); pieces=[]; inputs={}
+            dest=out/'comparisons'/kind/str(seed); pieces=[]; inputs=[]
             for o in origins:
                 refpath=out/'references'/f'{o}.parquet'
                 bp=out/'models'/'lightgbm'/str(seed)/f'{o}.parquet' if kind=='lightgbm' else out/'models'/'tft'/f'{o}_seed_{seed}.parquet'
                 verify(bp)
-                for p in [refpath,bp]: inputs[str(p.relative_to(out))]=digest(p)
+                for p in [refpath,bp]: inputs.append(str(p.relative_to(out)))
                 ref=verified_week(refpath,data.source.window(o)[-1],['shape_retrieval','factor_retrieval'])
                 b=pd.read_parquet(bp).rename(columns={'forecast':'backbone_forecast'})
                 f=merge(ref,b)
@@ -91,8 +86,8 @@ def fuse_and_score(data,out,backbone='all'):
             if marker.exists():
                 old=json.loads(marker.read_text())
                 if old['inputs']!=inputs: raise ValueError('Gate inputs changed')
-                for rel,sha in old['outputs'].items():
-                    if digest(dest/rel)!=sha: raise ValueError('Gate/score artifact changed')
+                for rel in old['outputs']:
+                    if not (dest/rel).is_file(): raise ValueError('Gate/score artifact missing')
                 continue
             pred,fit=run_gates(pd.concat(pieces,ignore_index=True),data.schedule['dev'])
             save_week(dest/'predictions.parquet',pred); json_write(dest/'fit.json',fit)
@@ -103,8 +98,8 @@ def fuse_and_score(data,out,backbone='all'):
             result=dict(backbone=kind,seed=seed,status='complete',overall={m:metric(scored,m) for m in METHODS},
                         weekly={o:{m:metric(f,m) for m in METHODS} for o,f in scored.groupby('origin')})
             save_week(dest/'scored_predictions.parquet',scored); json_write(dest/'metrics.json',result)
-            json_write(marker,dict(inputs=inputs,outputs={p.name:digest(p) for p in dest.iterdir() if p.is_file() and p.name!='complete.json'}))
-    json_write(out/'complete.json',dict(status='complete',artifacts={str(p.relative_to(out)):digest(p) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json']}))
+            json_write(marker,dict(inputs=inputs,outputs=sorted(p.name for p in dest.iterdir() if p.is_file() and p.name!='complete.json')))
+    json_write(out/'complete.json',dict(status='complete',artifacts=sorted(str(p.relative_to(out)) for p in out.rglob('*') if p.is_file() and p.name not in ['RUNNING.lock','complete.json','status.json'])))
 
 
 def main():
@@ -115,14 +110,14 @@ def main():
     p.add_argument('--stage',choices=['audit','references','lightgbm','tft','score','all'],default='all')
     a=p.parse_args(); a.out.mkdir(parents=True,exist_ok=True)
     data=Data(a.raw); stamp=identity(data,a.device); stamp['backbone']=a.backbone; manifest=a.out/'manifest.json'
-    if manifest.exists() and json.loads(manifest.read_text())!=stamp: raise ValueError('Data/code/config/environment changed: use a new output directory')
+    if manifest.exists() and json.loads(manifest.read_text())!=stamp: raise ValueError('Config/schedule/environment changed: use a new output directory')
     lock=a.out/'RUNNING.lock'
     with lock.open('x') as f: f.write(str(os.getpid()))
     try:
         json_write(manifest,stamp); json_write(a.out/'audit.json',dict(**data.source.audit,backbone_schedule=data.schedule))
         if (a.out/'complete.json').exists():
-            for rel,sha in json.loads((a.out/'complete.json').read_text())['artifacts'].items():
-                if digest(a.out/rel)!=sha: raise ValueError('Completed output changed: '+rel)
+            for rel in json.loads((a.out/'complete.json').read_text())['artifacts']:
+                if not (a.out/rel).is_file(): raise ValueError('Completed output missing: '+rel)
             return
         with threadpool_limits(limits=CONFIG['cpu_threads']):
             stages=['references','lightgbm','tft','score'] if a.stage=='all' else [a.stage]

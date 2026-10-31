@@ -8,18 +8,14 @@ import platform
 import sys
 import time
 from pathlib import Path
-from data_provider.retail import (HERE, ROOT, RESULT_ROOT, CONFIG, KEYS, RetailData, schedules, digest,
+from data_provider.retail import (HERE, ROOT, RESULT_ROOT, CONFIG, KEYS, RetailData, schedules,
                     json_write, checked_merge, metric, check_prediction, RAW_ROOT)
 
 STAGES = ["references", "chronos", "lightgbm", "tft", "gates", "score"]
 
 
-def fingerprint(schedule, backbone="all"):
-    # Bind resume to all executable project dependencies, not just the CLI.
-    from exp.dependencies import dependency_files
-    paths = dependency_files() + [ROOT/"configs/retail.json", ROOT/"configs/favorita_origins.json"]
-    sources = {str(p.relative_to(ROOT)): digest(p) for p in sorted(set(paths))}
-    return dict(config=CONFIG, schedule=schedule, sources=sources, backbone=backbone)
+def run_identity(schedule, backbone="all"):
+    return dict(config=CONFIG, schedule=schedule, backbone=backbone)
 
 
 def audit(data, schedule, folder):
@@ -29,7 +25,9 @@ def audit(data, schedule, folder):
     if data.dataset == "m5":
         if len(data.ids)!=30490 or len(data.days)!=1941 or data.days[0]!="2011-01-29" or data.days[-1]!="2016-05-22":
             raise ValueError("M5 must contain all 30,490 series and 1,941 labelled dates")
-    provenance = {name: digest(raw/name) for name in files}
+    for name in files:
+        if not (raw/name).is_file():
+            raise FileNotFoundError(raw/name)
     versions = {}
     for name in ("numpy", "pandas", "scipy", "pyarrow", "lightgbm", "torch", "chronos-forecasting", "pytorch-forecasting", "lightning", "scikit-learn", "statsmodels"):
         try:
@@ -39,8 +37,6 @@ def audit(data, schedule, folder):
     path = folder/"audit.json"
     if path.exists():
         old = json.loads(path.read_text(encoding="utf-8"))
-        if old["raw_sha256"] != provenance:
-            raise ValueError("Raw data changed; choose a new run directory")
         if old["packages"] != versions or old["python"] != platform.python_version():
             raise ValueError("Runtime packages changed; restore environment or choose a new run directory")
     counts = {}
@@ -50,7 +46,7 @@ def audit(data, schedule, folder):
             counts[origin] = len(data.eligible(origin))
             if counts[origin] == 0:
                 raise ValueError(f"No eligible series {origin}")
-    json_write(path, dict(raw_sha256=provenance, series_by_origin=counts,
+    json_write(path, dict(raw_files=files, series_by_origin=counts,
         raw_days=len(data.days), raw_series=len(data.ids), raw_start=data.days[0], raw_end=data.days[-1],
         python=platform.python_version(), platform=platform.platform(),
         packages=versions))
@@ -88,9 +84,9 @@ def main():
             folder = args.out/name
             folder.mkdir(parents=True, exist_ok=True)
             manifest = folder/"manifest.json"
-            expected = fingerprint(schedule, args.backbone)
+            expected = run_identity(schedule, args.backbone)
             if manifest.exists() and json.loads(manifest.read_text(encoding="utf-8")) != expected:
-                raise ValueError("Code/config/schedule differs from previous run; use a new --out directory")
+                raise ValueError("Config/schedule differs from previous run; use a new --out directory")
             if not manifest.exists():
                 json_write(manifest, expected)
             data = RetailData(schedule["dataset"])
@@ -102,9 +98,9 @@ def main():
                 complete = folder/(stage+".complete.json")
                 if complete.exists():
                     saved = json.loads(complete.read_text())
-                    for rel, sha in saved["artifacts"].items():
-                        if digest(folder/rel) != sha:
-                            raise ValueError(f"Completed artifact changed: {rel}")
+                    for rel in saved["artifacts"]:
+                        if not (folder/rel).is_file():
+                            raise ValueError(f"Completed artifact missing: {rel}")
                     print("skip complete", name, stage, flush=True)
                     continue
                 started = time.time()
@@ -136,7 +132,7 @@ def main():
                     artifact_roots = [folder/"metrics.json"]
                 paths = [p for r in artifact_roots for p in (r.rglob("*") if r.is_dir() else [r]) if p.is_file()]
                 json_write(complete, dict(elapsed_seconds=time.time()-started,
-                    artifacts={str(p.relative_to(folder)): digest(p) for p in paths}))
+                    artifacts=sorted(str(p.relative_to(folder)) for p in paths)))
                 json_write(folder/"status.json", dict(run=name, stage=stage, status="complete"))
             del data
             import gc

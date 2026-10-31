@@ -13,7 +13,7 @@ from scipy.special import expit
 from threadpoolctl import threadpool_limits
 
 SHRINK_ROWS = 14.0
-PENALTY = 0.002
+PENALTY = 0.001
 HISTORY_NAMES = ["hist_backbone_error", "hist_shape_error", "hist_factor_error", "hist_log_support"]
 
 
@@ -81,7 +81,7 @@ def fit_gate(x, y, b, s, f, single=False):
     with threadpool_limits(limits=4):
         result = minimize(objective, np.zeros(k if single else 2 * k), jac=True,
                           method="L-BFGS-B",
-                          options={"maxiter": 250, "ftol": 3e-9, "gtol": 3e-6})
+                          options={"maxiter": 250, "ftol": 1e-9, "gtol": 1e-6})
     if not result.success or not np.isfinite(result.x).all():
         raise RuntimeError(f"Gate fit failed: {result.message}")
     return result.x, {"iterations": int(result.nit), "objective": float(result.fun),

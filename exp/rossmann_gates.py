@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.special import softmax
 from scipy.optimize import minimize
 from exp.reference_math import fit_gate,predict_gate,select_global_weights
+from exp.static_controls import history_hard_control
 from data_provider.rossmann import KEYS
 
 def history(frame,parts,train):
@@ -42,8 +43,8 @@ def flat_objective(theta,x,y,parts):
     pred=(parts*w).sum(1); residual=pred-y; smooth=np.sqrt(residual**2+1); g=residual/smooth/y.sum()
     grad=np.r_[x.T@(g*w[:,1]*(parts[:,1]-pred)),x.T@(g*w[:,2]*(parts[:,2]-pred))]
     mask=np.ones(2*k,bool); mask[[0,k]]=False
-    grad[mask]+=.004*theta[mask]
-    return smooth.sum()/y.sum()+.002*np.square(theta[mask]).sum(),grad
+    grad[mask]+=.002*theta[mask]
+    return smooth.sum()/y.sum()+.001*np.square(theta[mask]).sum(),grad
 
 def run_gates(frame,dev):
     frame=frame.sort_values(KEYS).reset_index(drop=True).copy()
@@ -54,13 +55,14 @@ def run_gates(frame,dev):
     out['backbone']=parts[~train,0]; out['shape_half']=parts[~train][:,[0,1]].mean(1); out['factor_half']=parts[~train][:,[0,2]].mean(1)
     weights,wape=select_global_weights(y[fit],parts[fit]); out['global_static']=parts[~train]@(np.asarray(weights)/20)
     fits['global_static']=dict(weights=list(weights),development_wape=wape)
+    out['history_hard'],fits['history_hard']=history_hard_control(frame,parts,y,fit,weights,~train)
     for name,xx in [('soft_history',x),('soft_no_history',x[:,:-4])]:
         theta,record=fit_gate(xx[fit],y[fit],*parts[fit].T)
         pred,beta,alpha=predict_gate(xx[~train],theta,*parts[~train].T)
         out[name]=pred; fits[name]=record
         if name=='soft_history': out['alpha']=alpha; out['beta']=beta
     theta=np.zeros(2*x.shape[1]); theta[[0,x.shape[1]]]=-np.log(2)
-    result=minimize(flat_objective,theta,args=(x[fit],y[fit],parts[fit]),jac=True,method='L-BFGS-B',options=dict(maxiter=250,ftol=3e-9,gtol=3e-6))
+    result=minimize(flat_objective,theta,args=(x[fit],y[fit],parts[fit]),jac=True,method='L-BFGS-B',options=dict(maxiter=250,ftol=1e-9,gtol=1e-6))
     if not result.success: raise RuntimeError('Softmax failed: '+str(result.message))
     k=x.shape[1]; w=softmax(np.column_stack([np.zeros((~train).sum()),x[~train]@result.x[:k],x[~train]@result.x[k:]]),axis=1)
     out['flat_softmax']=(w*parts[~train]).sum(1)
